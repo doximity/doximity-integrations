@@ -8,9 +8,9 @@ This is an example Python application that shows how to embed the full Doximity 
 - **Just-in-time magic links** — the single-use, five-minute launch URL is minted when you click Launch, handed straight to the iframe, and never logged or persisted.
 - **Embedding** — the frontend embeds the launch URL in an iframe; Doximity hosts the entire Ask experience inside it (multi-turn chat, attachments, enterprise templates, patient banner, citation rendering). There is no chat UX, streaming, or rendering to build.
 - **Three example launches** — one button per Partner Login shape (payloads in `LAUNCH_VARIANTS` in `main.py`; swap in your real data there):
-  - **Blank chat** (`create_chat: false`) — no chat is created ahead of time; the practitioner lands on the embedded Ask new-chat page and their first message creates the chat.
+  - **Blank chat** — no launch parameters at all. The Partner Login API infers `destination: ask`, `create_chat: false`, and `patient_context_chat: false`: the practitioner lands on the embedded Ask new-chat page and their first message creates the chat.
   - **Patient context** — a patient-context chat with example demographics (patient banner) and fake clinical history passed as the `patient_context` attachment; no prompt.
-  - **Chat with prompt** — a plain chat (`patient_context_chat: false`) with an `ask` question, so the answer is already streaming when the page loads.
+  - **Chat with prompt** — just an `ask` question. With no patient arguments the launch infers a plain chat (`patient_context_chat: false`), so the answer is already streaming when the page loads.
 - **Launch lifecycle** — every launch mints a fresh single-use magic link and opens a fresh chat (a new patient or encounter should always mint a fresh one). A stale or consumed link means the iframe fails to authenticate — launching again fixes it.
 
 ## Layout
@@ -78,7 +78,7 @@ Open <http://localhost:8000> and click **Launch Ask**. The Ask session loads in 
 
 ## How it works
 
-- `POST /api/launch` takes `{ "variant": "blank" | "patient" | "prompt" }` and forwards the matching example parameters from `LAUNCH_VARIANTS` (`main.py`) to the Partner Login API with the bearer token, forcing `destination: "ask"` and `embedded: true`.
+- `POST /api/launch` takes `{ "variant": "blank" | "patient" | "prompt" }` and forwards the matching example parameters from `LAUNCH_VARIANTS` (`main.py`) to the Partner Login API with the bearer token, forcing only `embedded: true`. `destination`, `create_chat`, and `patient_context_chat` are deliberately left out so the API's defaults decide them.
 - The API returns `{ "url": "https://auth.doximity.com/magic_link?..." }` — a single-use magic sign-in link that expires in five minutes. The demo mints it only when you click Launch, hands it straight to the iframe, and never logs its value.
 - The clinician's session persists in their browser, so returning to the iframe later does not re-prompt — but each new launch context (new patient, new encounter) mints a fresh launch and opens a fresh chat.
 

@@ -54,8 +54,10 @@ app = FastAPI(title="Doximity Ask iframe demo", lifespan=lifespan)
 #   npi              usage attribution
 #   email            recorded on the account
 #
-# The backend always forces destination: "ask" and embedded: true, then
-# merges the per-variant params from LAUNCH_VARIANTS (see below).
+# The backend only forces embedded: true, then merges the per-variant
+# params from LAUNCH_VARIANTS (see below). Everything the Partner Login API
+# can infer — destination, create_chat, patient_context_chat — is left out
+# on purpose, to exercise the server-side defaults.
 EXAMPLE_LAUNCH = {
     "practitioner_id": "your-internal-practitioner-id",
     "first_name": "Dana",
@@ -66,18 +68,18 @@ EXAMPLE_LAUNCH = {
 
 # One example per launch button, showing the different Partner Login shapes:
 #
-# "blank"   create_chat: false — no chat is created ahead of time; the
+# "blank"   no launch params at all — the API infers destination: ask,
+#           create_chat: false, and patient_context_chat: false, so the
 #           practitioner lands on the embedded Ask new-chat page and their
 #           first message creates the chat.
 # "patient" a patient-context chat: demographics render the patient banner
 #           and patient_context rides along as an attachment. No prompt —
 #           an empty patient-anchored chat.
-# "prompt"  a plain chat (patient_context_chat: false) with an ask question
-#           — the answer is already streaming when the page loads.
+# "prompt"  just an ask question — with no patient arguments the launch
+#           infers a plain chat, and the answer is already streaming when
+#           the page loads.
 LAUNCH_VARIANTS = {
-    "blank": {
-        "create_chat": False,
-    },
+    "blank": {},
     "patient": {
         "patient_name": "Jane Doe",
         "patient_age": "55",
@@ -89,7 +91,6 @@ LAUNCH_VARIANTS = {
         ),
     },
     "prompt": {
-        "patient_context_chat": False,
         "ask": (
             "What is the first-line treatment for hypertension in a "
             "55 year old with no comorbidities?"
@@ -125,7 +126,7 @@ async def launch(options: LaunchOptions | None = None):
     if variant not in VALID_VARIANTS:
         return _error(400, f"Unknown variant {variant!r}; expected one of {sorted(VALID_VARIANTS)}")
 
-    payload = {**EXAMPLE_LAUNCH, "destination": "ask", "embedded": True, **LAUNCH_VARIANTS[variant]}
+    payload = {**EXAMPLE_LAUNCH, "embedded": True, **LAUNCH_VARIANTS[variant]}
 
     http: httpx.AsyncClient = app.state.http
     tokens: TokenManager = app.state.tokens

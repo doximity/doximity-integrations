@@ -81,11 +81,18 @@ function showCitationTooltip(link) {
     const number = map.anchorIds.indexOf(id) + 1;
     if (citation) {
       title.textContent = `[${number}] ${citation.title || citation.url || citation.id}`;
-      if (citation.source) {
-        const source = document.createElement("div");
-        source.className = "ct-source";
-        source.textContent = citation.source;
-        tooltipEl.appendChild(source);
+      const source = citationSourceLabel(citation);
+      if (source) {
+        const sourceEl = document.createElement("div");
+        sourceEl.className = "ct-source";
+        sourceEl.textContent = source;
+        tooltipEl.appendChild(sourceEl);
+      }
+      if (citation.passage) {
+        const passage = document.createElement("div");
+        passage.className = "ct-passage";
+        passage.textContent = citation.passage;
+        tooltipEl.appendChild(passage);
       }
       if (citation.url) {
         const url = document.createElement("div");
@@ -112,6 +119,13 @@ function showCitationTooltip(link) {
 
 function hideCitationTooltip() {
   tooltipEl.style.display = "none";
+}
+
+// Citation payloads carry journal/year (plus pmid/passage); older environments
+// sent a plain "source" string instead.
+function citationSourceLabel(citation) {
+  if (citation.source) return citation.source;
+  return [citation.journal, citation.year].filter(Boolean).join(" · ");
 }
 
 chatEl.addEventListener("click", (event) => {
@@ -194,6 +208,13 @@ function handleFrame(turn, assistant, eventName, data) {
   }
   if (chunk.error) {
     turn.error = chunk.error.message || "The Ask API reported an error.";
+    return;
+  }
+  // Citations arrive as their own named SSE event ("event: citation") carrying
+  // a chat.completion.citation object — not as an array on the final chunk.
+  if (eventName === "citation" || chunk.object === "chat.completion.citation") {
+    if (!Array.isArray(turn.citations)) turn.citations = [];
+    turn.citations.push(chunk);
     return;
   }
   if (eventName === "artifact" || chunk.object === "chat.completion.artifact") {
@@ -361,11 +382,12 @@ function renderCitations(footerEl, byId, anchorIds) {
       }
       link.textContent = citation.title || citation.url;
       item.appendChild(link);
-      if (citation.source) {
-        const source = document.createElement("span");
-        source.className = "citation-source";
-        source.textContent = citation.source;
-        item.appendChild(source);
+      const source = citationSourceLabel(citation);
+      if (source) {
+        const sourceEl = document.createElement("span");
+        sourceEl.className = "citation-source";
+        sourceEl.textContent = source;
+        item.appendChild(sourceEl);
       }
     } else {
       const missing = document.createElement("span");
@@ -391,6 +413,8 @@ function renderArtifact(container, artifact) {
 
   if (artifact.type === "drug_interaction") {
     renderDrugInteraction(card, data);
+  } else if (artifact.type === "dose_check") {
+    renderDoseCheck(card, data);
   } else if (artifact.type === "drug_pill_images") {
     renderPillImages(card, data);
   } else if (artifact.type === "generated_image") {
@@ -482,6 +506,56 @@ function renderDrugInteraction(card, data) {
     card.appendChild(p);
   }
   renderArtifactSources(card, data.sources);
+}
+
+function renderDoseCheck(card, data) {
+  const statements = Array.isArray(data.statements) ? data.statements : [];
+  const unverified = statements.filter((s) => s.status !== "verified").length;
+  artifactTitle(
+    card,
+    "Dose check",
+    data.all_verified ? "verified" : `${unverified} to review`,
+  );
+
+  const list = document.createElement("ul");
+  list.className = "dose-check-list";
+  for (const statement of statements) {
+    const item = document.createElement("li");
+    item.className = `dose-check-item status-${statement.status || "unverified"}`;
+
+    const badge = document.createElement("span");
+    badge.className = `badge severity-${statement.status || "unverified"}`;
+    badge.textContent = statement.status || "unverified";
+    item.appendChild(badge);
+
+    const text = document.createElement("span");
+    text.className = "dose-check-text";
+    text.textContent = statement.text;
+    item.appendChild(text);
+
+    const reference = statement.reference;
+    if (reference) {
+      const refEl = document.createElement("div");
+      refEl.className = "dose-check-ref";
+      if (reference.citation_id) {
+        // Links into the Sources bibliography rendered below the answer.
+        const link = document.createElement("a");
+        link.href = `#ref-${reference.citation_id}`;
+        refEl.appendChild(link);
+        const detail = document.createElement("span");
+        detail.textContent = reference.excerpt || reference.context || "";
+        refEl.appendChild(detail);
+      } else {
+        const label = [reference.title, reference.excerpt, reference.context]
+          .filter(Boolean)
+          .join(" — ");
+        refEl.textContent = label || reference.source || "";
+      }
+      item.appendChild(refEl);
+    }
+    list.appendChild(item);
+  }
+  card.appendChild(list);
 }
 
 function renderPillImages(card, data) {

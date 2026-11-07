@@ -280,6 +280,57 @@ details.reasoning-details summary {
   gap: 8px;
 }
 
+/* Dose check artifact */
+.dose-check-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  font-size: 14px;
+}
+
+.dose-check-item {
+  padding: 6px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.dose-check-item:last-child {
+  border-bottom: none;
+}
+
+.dose-check-item .badge {
+  margin-right: 8px;
+  text-transform: none;
+}
+
+.dose-check-item.status-unverified .badge {
+  background: #c62828;
+}
+
+.dose-check-item.status-partial .badge {
+  background: #ef6c00;
+}
+
+.dose-check-item.status-verified .badge {
+  background: #2e7d32;
+}
+
+.dose-check-ref {
+  margin-top: 2px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.dose-check-ref a {
+  color: var(--accent);
+  font-weight: 600;
+  text-decoration: none;
+  margin-right: 6px;
+}
+
+.dose-check-ref a::before {
+  content: "↪ ";
+}
+
 .pill-images img {
   height: 64px;
   border-radius: 6px;
@@ -353,6 +404,15 @@ ol.citations li {
 
 #citation-tooltip .ct-source {
   color: var(--muted);
+}
+
+#citation-tooltip .ct-passage {
+  color: var(--muted);
+  margin-top: 4px;
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 #citation-tooltip .ct-url {

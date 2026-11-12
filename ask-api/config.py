@@ -8,7 +8,7 @@ import os
 from dataclasses import dataclass
 
 DEFAULT_DISCOVERY_URL = "https://auth.doximity.com/.well-known/openid-configuration"
-DEFAULT_ASK_URL = "https://query-router.doximity.services/v1/chat/external"
+DEFAULT_ASK_URL = "https://docs-gpt.doximity.com/api/v1/external_chat_completions"
 
 
 def _load_dotenv(path: str) -> None:

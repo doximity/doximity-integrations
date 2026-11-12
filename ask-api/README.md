@@ -33,7 +33,7 @@ All configuration is via environment variables (copy `.env.example` to `.env`, o
 | `DOX_CLIENT_ID` | yes | — | OAuth client ID for your registered Doximity application |
 | `DOX_CLIENT_SECRET` | yes | — | OAuth client secret — treat like a password, never commit it |
 | `DOX_AUTH_DISCOVERY_URL` | no | `https://auth.doximity.com/.well-known/openid-configuration` | OpenID Connect discovery document; the token endpoint is read from it |
-| `DOX_ASK_URL` | no | `https://query-router.doximity.services/v1/chat/external` | The Ask API endpoint the proxy forwards to |
+| `DOX_ASK_URL` | no | `https://docs-gpt.doximity.com/api/v1/external_chat_completions` | The Ask API endpoint the proxy forwards to |
 | `DOX_NPI` | no | — | Default clinician NPI used for usage attribution (the frontend can also send one per request) |
 | `PORT` | no | `8000` | Port the server listens on |
 
